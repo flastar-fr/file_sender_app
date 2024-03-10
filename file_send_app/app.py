@@ -9,6 +9,7 @@ from datas_extraction import read_json_file, get_self_ip
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
+BUFFER_SIZE = 4096
 
 
 def start_thread(to_execute: ..., *args):
@@ -111,7 +112,6 @@ class App(customtkinter.CTk):
 
         # initialized sending
         file_name = os.path.basename(file_path)
-        BUFFER_SIZE = 4096
 
         s.send(f"{file_name}".encode())
 
@@ -121,7 +121,6 @@ class App(customtkinter.CTk):
                 bytes_read = f.read(BUFFER_SIZE)
                 if not bytes_read:
                     break
-                print(bytes_read)
                 s.send(bytes_read)
 
         s.close()
@@ -145,13 +144,13 @@ class App(customtkinter.CTk):
 
         # get final path
         downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-        filename = client_socket.recv(4096).decode()
+        filename = client_socket.recv(BUFFER_SIZE).decode()
         filepath = os.path.join(downloads_folder, filename)
 
         # receiving
         with open(filepath, 'wb') as f:
             while True:
-                datas = client_socket.recv(4096)
+                datas = client_socket.recv(BUFFER_SIZE)
                 if not datas:
                     break
                 f.write(datas)
