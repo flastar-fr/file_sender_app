@@ -2,7 +2,7 @@ import json
 import socket
 
 
-def read_json_file(file_path: str) -> {}:
+def read_json_file(file_path: str) -> dict:
     """ Function to read a json file
         :param file_path: str -> data json file path
 
@@ -14,4 +14,7 @@ def read_json_file(file_path: str) -> {}:
 
 
 def get_self_ip() -> str:
+    """ Function to get the IP of the current computer
+        :return: str -> IP wanted
+    """
     return socket.gethostbyname(socket.gethostname())

@@ -20,6 +20,13 @@ def start_thread(to_execute: ..., *args):
 
 
 def try_to_connect(s: socket.socket, host: str, port: int) -> bool:
+    """ Function to test to connect to another device
+        :param s: socket -> socket to try connection
+        :param host: str -> IP to connect
+        :param port: int -> port to connect
+
+        :return: bool -> True if the connection is working, otherwise False
+    """
     try:
         s.connect((host, port))
         return True
@@ -80,10 +87,13 @@ class App(customtkinter.CTk):
         super().mainloop()
 
     def select_folder(self):
+        """ Method to select the folder path and change the needed entry """
         folder_path = askopenfilename(title="Select file")
         self.folder.set(folder_path)
 
     def start_sending(self):
+        """ Method to start sending the file """
+        # inputs selection
         host: str = self.datas["ip"][self.option_ip.get()]
         file_path: str = self.entry_file.get()
         s = socket.socket()
@@ -99,12 +109,13 @@ class App(customtkinter.CTk):
             CTkMessagebox(title="Error", message="Connection refused", icon="cancel")
             return None
 
-        file_size = os.path.getsize(file_path)
+        # initialized sending
         file_name = os.path.basename(file_path)
         BUFFER_SIZE = 4096
 
         s.send(f"{file_name}".encode())
 
+        # sending
         with open(file_path, "rb") as f:
             while True:
                 bytes_read = f.read(BUFFER_SIZE)
@@ -116,6 +127,8 @@ class App(customtkinter.CTk):
         s.close()
 
     def start_receiving(self):
+        """ Method to start receiving the file """
+        # socket initialization
         adresse = ""
         port = 4711
         s = socket.socket()
@@ -124,14 +137,18 @@ class App(customtkinter.CTk):
         s.listen(1)
 
         client_socket, client_address = s.accept()
+
+        # verify if the adress is in selectable adresses
         if client_address[0] not in self.datas["ip"].values():
             CTkMessagebox(title="Error", message="Connection refused, IP not registered", icon="cancel")
             return None
 
+        # get final path
         downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-
         filename = client_socket.recv(4096).decode()
         filepath = os.path.join(downloads_folder, filename)
+
+        # receiving
         with open(filepath, 'wb') as f:
             while True:
                 datas = client_socket.recv(4096)
