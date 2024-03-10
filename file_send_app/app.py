@@ -10,14 +10,16 @@ from datas_extraction import read_json_file, get_self_ip
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 BUFFER_SIZE = 4096
+exit_event = threading.Event()
 
 
-def start_thread(to_execute: ..., *args):
+def start_thread(to_execute: ..., *args: ...):
     """ Function to execute a thread
         :param to_execute: ... -> object to execute in the new thread
         :param args: Any -> arguments to pass
     """
-    threading.Thread(target=to_execute, args=args).start()
+    thread = threading.Thread(target=to_execute, args=args)
+    thread.start()
 
 
 def try_to_connect(s: socket.socket, host: str, port: int) -> bool:
@@ -46,6 +48,7 @@ class App(customtkinter.CTk):
         os.chdir(dname)
 
         self.datas = read_json_file("datas.json")
+        self.stop_process = False
 
         ips = self.datas["ip"]
         ips = {name: ip for name, ip in ips.items() if ip != get_self_ip()}
@@ -82,8 +85,11 @@ class App(customtkinter.CTk):
 
         # receive tab
         button_start_receive = customtkinter.CTkButton(tabview.tab("Receive"), text="Start receiving",
-                                                       command=lambda: start_thread(self.start_receiving()))
+                                                       command=lambda: start_thread(self.start_receiving))
         button_start_receive.pack(anchor="center")
+        button_stop_receive = customtkinter.CTkButton(tabview.tab("Receive"), text="Stop receiving",
+                                                      command=lambda: exit_event.set())
+        button_stop_receive.pack(anchor="center", pady=20)
 
         super().mainloop()
 
@@ -121,9 +127,12 @@ class App(customtkinter.CTk):
                 bytes_read = f.read(BUFFER_SIZE)
                 if not bytes_read:
                     break
+                if exit_event.is_set():
+                    break
                 s.send(bytes_read)
 
         s.close()
+        exit_event.clear()
 
     def start_receiving(self):
         """ Method to start receiving the file """
@@ -153,12 +162,17 @@ class App(customtkinter.CTk):
                 datas = client_socket.recv(BUFFER_SIZE)
                 if not datas:
                     break
+                if exit_event.is_set():
+                    break
                 f.write(datas)
 
         client_socket.close()
         s.close()
 
-        CTkMessagebox(title="Complete", message="Download complete", icon="check")
+        if not exit_event.is_set():
+            CTkMessagebox(title="Complete", message="Download complete", icon="check")
+        else:
+            exit_event.clear()
 
 
 if __name__ == "__main__":
