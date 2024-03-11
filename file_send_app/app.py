@@ -6,9 +6,9 @@ import customtkinter
 import threading
 from tkinter.filedialog import askopenfilename
 from CTkMessagebox import CTkMessagebox
-from datas_extraction import read_json_file, get_self_ip
+from datas_extraction import read_json_file, get_self_ip, write_json_file
 
-customtkinter.set_appearance_mode("System")
+customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
 BUFFER_SIZE = 4096
 exit_event = threading.Event()
@@ -48,7 +48,7 @@ class App(customtkinter.CTk):
         dname = os.path.dirname(abspath)
         os.chdir(dname)
 
-        self.datas = read_json_file("datas.json")
+        self.datas: dict[str: dict[str: str]] = read_json_file("datas.json")
 
         ips = self.datas["ip"]
         ips = {name: ip for name, ip in ips.items() if ip != get_self_ip()}
@@ -62,22 +62,23 @@ class App(customtkinter.CTk):
         tabview = customtkinter.CTkTabview(self)
         tabview.add("Send")
         tabview.add("Receive")
+        tabview.add("Add/Delete PC")
         tabview.pack(expand=True, fill="both", padx=10, pady=(0, 10))
 
         # send tab
-        frame = customtkinter.CTkFrame(tabview.tab("Send"))
-        frame.pack()
-        label_ip = customtkinter.CTkLabel(frame, text="Select PC : ")
+        frame_send = customtkinter.CTkFrame(tabview.tab("Send"))
+        frame_send.pack()
+        label_ip = customtkinter.CTkLabel(frame_send, text="Select PC : ")
         label_ip.grid(row=0, column=0)
         values = [key for key in ips.keys()]
-        self._option_ip = customtkinter.CTkOptionMenu(frame, values=values)
+        self._option_ip = customtkinter.CTkOptionMenu(frame_send, values=values)
         self._option_ip.grid(row=0, column=1, padx=20, pady=5)
-        label_file = customtkinter.CTkLabel(frame, text="File Path : ")
+        label_file = customtkinter.CTkLabel(frame_send, text="File Path : ")
         label_file.grid(row=2, column=0)
         self._folder = customtkinter.StringVar()
-        self._entry_file = customtkinter.CTkEntry(frame, textvariable=self._folder)
+        self._entry_file = customtkinter.CTkEntry(frame_send, textvariable=self._folder)
         self._entry_file.grid(row=2, column=1, padx=20, pady=5)
-        button_file = customtkinter.CTkButton(frame, text="Browse", command=self.select_folder)
+        button_file = customtkinter.CTkButton(frame_send, text="Browse", command=self.select_folder)
         button_file.grid(row=2, column=2, padx=20, pady=5)
 
         button_start_send = customtkinter.CTkButton(tabview.tab("Send"), text="Start sending",
@@ -103,6 +104,25 @@ class App(customtkinter.CTk):
                                                       command=lambda: exit_event.set())
         button_stop_receive.pack(pady=20, anchor="center")
 
+        # add and delete PC tab
+        label_add = customtkinter.CTkLabel(tabview.tab("Add/Delete PC"), text="Add :")
+        label_add.pack()
+        frame_add = customtkinter.CTkFrame(tabview.tab("Add/Delete PC"))
+        frame_add.pack()
+        button_add_self = customtkinter.CTkButton(frame_add, text="Add self PC", command=lambda: self.add_current_pc())
+        button_add_self.pack()
+        button_add_new = customtkinter.CTkButton(frame_add, text="Add other PC", command=lambda: self.add_new_pc())
+        button_add_new.pack(pady=10)
+
+        label_delete = customtkinter.CTkLabel(tabview.tab("Add/Delete PC"), text="Delete :")
+        label_delete.pack()
+        frame_delete = customtkinter.CTkFrame(tabview.tab("Add/Delete PC"))
+        frame_delete.pack()
+        self._option_ip_del = customtkinter.CTkOptionMenu(frame_delete, values=[key for key in self.datas["ip"].keys()])
+        self._option_ip_del.grid(row=0, column=0, padx=(0, 10))
+        button_del = customtkinter.CTkButton(frame_delete, text="Delete", command=lambda: self.delete_pc())
+        button_del.grid(row=0, column=1)
+
         super().mainloop()
 
     def select_folder(self):
@@ -110,6 +130,43 @@ class App(customtkinter.CTk):
         folder_path = askopenfilename(title="Select file")
         if folder_path != "":
             self._folder.set(folder_path)
+
+    def add_current_pc(self):
+        """ Method to add the current selected computer """
+        current_ip = get_self_ip()
+
+        if current_ip in self.datas["ip"].values():
+            return None
+
+        pc_name = customtkinter.CTkInputDialog(title="Enter", text="Please, enter a name for your computer")
+
+        self.datas["ip"][pc_name.get_input()] = current_ip
+        write_json_file(self.datas)
+
+        self._option_ip_del.configure(values=[key for key in self.datas["ip"].keys()])
+        self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
+
+    def add_new_pc(self):
+        """ Method to add a new computer """
+        pc_name = customtkinter.CTkInputDialog(title="Enter", text="Please, enter a name for your computer")
+        pc_ip = customtkinter.CTkInputDialog(title="Enter", text="Please, enter the IP you want to add")
+
+        if pc_ip.get_input() in self.datas["ip"].values():
+            return None
+
+        self.datas["ip"][pc_name.get_input()] = pc_ip.get_input()
+        write_json_file(self.datas)
+
+        self._option_ip_del.configure(values=[key for key in self.datas["ip"].keys()])
+        self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
+
+    def delete_pc(self):
+        to_delete = self._option_ip_del.get()
+        self.datas["ip"].pop(to_delete)
+        write_json_file(self.datas)
+
+        self._option_ip_del.configure(values=[key for key in self.datas["ip"].keys()])
+        self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
 
     def start_sending(self):
         """ Method to start sending the file """
