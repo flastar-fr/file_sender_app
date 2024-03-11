@@ -99,7 +99,8 @@ class App(customtkinter.CTk):
     def select_folder(self):
         """ Method to select the folder path and change the needed entry """
         folder_path = askopenfilename(title="Select file")
-        self.folder.set(folder_path)
+        if folder_path != "":
+            self.folder.set(folder_path)
 
     def start_sending(self):
         """ Method to start sending the file """
