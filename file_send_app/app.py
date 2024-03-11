@@ -82,6 +82,9 @@ class App(customtkinter.CTk):
         button_start_send = customtkinter.CTkButton(tabview.tab("Send"), text="Start sending",
                                                     command=lambda: start_thread(self.start_sending))
         button_start_send.grid(row=3, column=1, pady=20, sticky="e")
+        button_stop_receive = customtkinter.CTkButton(tabview.tab("Send"), text="Stop sending",
+                                                      command=lambda: exit_event.set())
+        button_stop_receive.grid(row=4, column=1, pady=20, sticky="e")
 
         # receive tab
         button_start_receive = customtkinter.CTkButton(tabview.tab("Receive"), text="Start receiving",
@@ -124,15 +127,19 @@ class App(customtkinter.CTk):
         # sending
         with open(file_path, "rb") as f:
             while True:
-                bytes_read = f.read(BUFFER_SIZE)
-                if not bytes_read:
+                try:    # case receiving is canceled on other computer
+                    bytes_read = f.read(BUFFER_SIZE)
+                except ConnectionResetError:
+                    CTkMessagebox(title="Cancel", message="Receiving canceled", icon="cancel")
+                if not bytes_read:      # if file is fully readen
+                    s.close()
+                    CTkMessagebox(title="Complete", message="Sending complete", icon="check")
                     break
-                if exit_event.is_set():
+                if exit_event.is_set():  # if user wants to cancel
+                    CTkMessagebox(title="Cancel", message="Sending successfully canceled", icon="check")
+                    exit_event.clear()
                     break
                 s.send(bytes_read)
-
-        s.close()
-        exit_event.clear()
 
     def start_receiving(self):
         """ Method to start receiving the file """
@@ -160,19 +167,16 @@ class App(customtkinter.CTk):
         with open(filepath, 'wb') as f:
             while True:
                 datas = client_socket.recv(BUFFER_SIZE)
-                if not datas:
+                if not datas:    # if file is fully readen
+                    client_socket.close()
+                    s.close()
+                    CTkMessagebox(title="Complete", message="Receiving complete", icon="check")
                     break
-                if exit_event.is_set():
+                if exit_event.is_set():     # if user wants to cancel
+                    CTkMessagebox(title="Cancel", message="Receiving successfully canceled", icon="check")
+                    exit_event.clear()
                     break
                 f.write(datas)
-
-        client_socket.close()
-        s.close()
-
-        if not exit_event.is_set():
-            CTkMessagebox(title="Complete", message="Download complete", icon="check")
-        else:
-            exit_event.clear()
 
 
 if __name__ == "__main__":

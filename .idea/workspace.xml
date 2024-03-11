@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="Clean up">
+    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="Stop current process try">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/file_send_app/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_send_app/app.py" afterDir="false" />
     </list>
@@ -162,13 +162,22 @@
       <option name="project" value="LOCAL" />
       <updated>1710106964001</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Stop current process try">
+      <option name="closed" value="true" />
+      <created>1710112529423</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1710112529423</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First Push" />
     <MESSAGE value="Docstrings + README.md" />
     <MESSAGE value="Clean up" />
-    <option name="LAST_COMMIT_MESSAGE" value="Clean up" />
+    <MESSAGE value="Stop current process try" />
+    <option name="LAST_COMMIT_MESSAGE" value="Stop current process try" />
   </component>
 </project>
