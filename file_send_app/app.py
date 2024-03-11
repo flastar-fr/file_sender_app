@@ -1,3 +1,4 @@
+import math
 import os
 import socket
 import re
@@ -48,13 +49,12 @@ class App(customtkinter.CTk):
         os.chdir(dname)
 
         self.datas = read_json_file("datas.json")
-        self.stop_process = False
 
         ips = self.datas["ip"]
         ips = {name: ip for name, ip in ips.items() if ip != get_self_ip()}
 
         self.title("File Sender app")
-        self.geometry(f"{450}x{280}")
+        self.geometry(f"{450}x{290}")
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -62,37 +62,46 @@ class App(customtkinter.CTk):
         tabview = customtkinter.CTkTabview(self)
         tabview.add("Send")
         tabview.add("Receive")
-        tabview.grid(row=1, column=0, columnspan=4, sticky="nswe", padx=10, pady=5)
+        tabview.pack(expand=True, fill="both", padx=10, pady=(0, 10))
 
         # send tab
-        label_ip = customtkinter.CTkLabel(tabview.tab("Send"), text="Select ip : ")
+        frame = customtkinter.CTkFrame(tabview.tab("Send"))
+        frame.pack()
+        label_ip = customtkinter.CTkLabel(frame, text="Select PC : ")
         label_ip.grid(row=0, column=0)
         values = [key for key in ips.keys()]
-        self.option_ip = customtkinter.CTkOptionMenu(tabview.tab("Send"), values=values)
-        self.option_ip.grid(row=0, column=1, padx=20, pady=5)
-        label_file = customtkinter.CTkLabel(tabview.tab("Send"), text="File Path : ")
+        self._option_ip = customtkinter.CTkOptionMenu(frame, values=values)
+        self._option_ip.grid(row=0, column=1, padx=20, pady=5)
+        label_file = customtkinter.CTkLabel(frame, text="File Path : ")
         label_file.grid(row=2, column=0)
-        self.folder = customtkinter.StringVar()
-        self.entry_file = customtkinter.CTkEntry(tabview.tab("Send"), textvariable=self.folder)
-        self.entry_file.grid(row=2, column=1, padx=20, pady=5)
-        button_file = customtkinter.CTkButton(tabview.tab("Send"), text="Browse", command=self.select_folder)
+        self._folder = customtkinter.StringVar()
+        self._entry_file = customtkinter.CTkEntry(frame, textvariable=self._folder)
+        self._entry_file.grid(row=2, column=1, padx=20, pady=5)
+        button_file = customtkinter.CTkButton(frame, text="Browse", command=self.select_folder)
         button_file.grid(row=2, column=2, padx=20, pady=5)
 
-        tabview.grid_rowconfigure(3, weight=1)
         button_start_send = customtkinter.CTkButton(tabview.tab("Send"), text="Start sending",
                                                     command=lambda: start_thread(self.start_sending))
-        button_start_send.grid(row=3, column=1, pady=20, sticky="e")
+        button_start_send.pack(pady=20)
+        self._progress_bar_send = customtkinter.CTkProgressBar(tabview.tab("Send"), mode="determinate")
+        self._progress_bar_send.set(0)
+        self._progress_bar_send.configure(progress_color="#1ba62b")
+        self._progress_bar_send.pack()
         button_stop_receive = customtkinter.CTkButton(tabview.tab("Send"), text="Stop sending",
                                                       command=lambda: exit_event.set())
-        button_stop_receive.grid(row=4, column=1, pady=20, sticky="e")
+        button_stop_receive.pack(pady=20)
 
         # receive tab
         button_start_receive = customtkinter.CTkButton(tabview.tab("Receive"), text="Start receiving",
                                                        command=lambda: start_thread(self.start_receiving))
-        button_start_receive.pack(anchor="center")
+        button_start_receive.pack(pady=20, anchor="n")
+        self._progress_bar_receive = customtkinter.CTkProgressBar(tabview.tab("Receive"), mode="determinate")
+        self._progress_bar_receive.set(0)
+        self._progress_bar_receive.configure(progress_color="#158f24")
+        self._progress_bar_receive.pack()
         button_stop_receive = customtkinter.CTkButton(tabview.tab("Receive"), text="Stop receiving",
                                                       command=lambda: exit_event.set())
-        button_stop_receive.pack(anchor="center", pady=20)
+        button_stop_receive.pack(pady=20, anchor="center")
 
         super().mainloop()
 
@@ -100,13 +109,13 @@ class App(customtkinter.CTk):
         """ Method to select the folder path and change the needed entry """
         folder_path = askopenfilename(title="Select file")
         if folder_path != "":
-            self.folder.set(folder_path)
+            self._folder.set(folder_path)
 
     def start_sending(self):
         """ Method to start sending the file """
         # inputs selection
-        host: str = self.datas["ip"][self.option_ip.get()]
-        file_path: str = self.entry_file.get()
+        host: str = self.datas["ip"][self._option_ip.get()]
+        file_path: str = self._entry_file.get()
         s = socket.socket()
 
         # inputs verification
@@ -121,9 +130,12 @@ class App(customtkinter.CTk):
             return None
 
         # initialized sending
+        total_bytes = 0
         file_name = os.path.basename(file_path)
+        file_size = os.path.getsize(file_path)
 
-        s.send(f"{file_name}".encode())
+        s.send(file_name.encode())
+        s.send(str(file_size).encode())
 
         # sending
         with open(file_path, "rb") as f:
@@ -141,6 +153,8 @@ class App(customtkinter.CTk):
                     exit_event.clear()
                     break
                 s.send(bytes_read)
+                total_bytes += len(bytes_read)
+                self._progress_bar_send.set(math.ceil(total_bytes / file_size))
 
     def start_receiving(self):
         """ Method to start receiving the file """
@@ -164,6 +178,10 @@ class App(customtkinter.CTk):
         filename = client_socket.recv(BUFFER_SIZE).decode()
         filepath = os.path.join(downloads_folder, filename)
 
+        # size
+        file_size = int(client_socket.recv(BUFFER_SIZE).decode())
+        total_bytes = 0
+
         # receiving
         with open(filepath, 'wb') as f:
             while True:
@@ -178,7 +196,10 @@ class App(customtkinter.CTk):
                     exit_event.clear()
                     break
                 f.write(datas)
+                total_bytes += len(datas)
+                self._progress_bar_send.set(math.ceil(total_bytes / file_size))
 
 
 if __name__ == "__main__":
     a = App()
+    exit_event.set()
