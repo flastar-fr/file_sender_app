@@ -4,11 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="Progress bar and Front end clean up">
+    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="Clean up">
+      <change beforePath="$PROJECT_DIR$/.idea/file_send_app.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/file_send_app.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/file_send_app/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_send_app/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/file_send_app/datas_extraction.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_send_app/datas_extraction.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,7 +40,6 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;Python.app.executor&quot;: &quot;Run&quot;,
-    &quot;Python.tes.executor&quot;: &quot;Run&quot;,
     &quot;Python.test.executor&quot;: &quot;Run&quot;,
     &quot;Python.test2.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
@@ -65,28 +64,6 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/file_send_app/app.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="tes" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="file_send_app" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tes.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -143,7 +120,6 @@
       <list>
         <item itemvalue="Python.app" />
         <item itemvalue="Python.test" />
-        <item itemvalue="Python.tes" />
         <item itemvalue="Python.test2" />
       </list>
     </recent_temporary>
@@ -188,49 +164,13 @@
       <option name="project" value="LOCAL" />
       <updated>1710106964001</updated>
     </task>
-    <task id="LOCAL-00004" summary="Stop current process try">
-      <option name="closed" value="true" />
-      <created>1710112529423</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1710112529423</updated>
-    </task>
-    <task id="LOCAL-00005" summary="Stop process and clean up">
-      <option name="closed" value="true" />
-      <created>1710177399230</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1710177399230</updated>
-    </task>
-    <task id="LOCAL-00006" summary="Folder button fix">
-      <option name="closed" value="true" />
-      <created>1710177558653</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
-      <option name="project" value="LOCAL" />
-      <updated>1710177558653</updated>
-    </task>
-    <task id="LOCAL-00007" summary="Progress bar and Front end clean up">
-      <option name="closed" value="true" />
-      <created>1710194443353</created>
-      <option name="number" value="00007" />
-      <option name="presentableId" value="LOCAL-00007" />
-      <option name="project" value="LOCAL" />
-      <updated>1710194443353</updated>
-    </task>
-    <option name="localTasksCounter" value="8" />
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First Push" />
     <MESSAGE value="Docstrings + README.md" />
     <MESSAGE value="Clean up" />
-    <MESSAGE value="Stop current process try" />
-    <MESSAGE value="Stop process and clean up" />
-    <MESSAGE value="Folder button fix" />
-    <MESSAGE value="Progress bar and Front end clean up" />
-    <option name="LAST_COMMIT_MESSAGE" value="Progress bar and Front end clean up" />
+    <option name="LAST_COMMIT_MESSAGE" value="Clean up" />
   </component>
 </project>

@@ -165,8 +165,10 @@ class App(customtkinter.CTk):
         self.datas["ip"].pop(to_delete)
         write_json_file(self.datas)
 
-        self._option_ip_del.configure(values=[key for key in self.datas["ip"].keys()])
+        values = [key for key in self.datas["ip"].keys()]
+        self._option_ip_del.configure(values=values)
         self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
+        self._option_ip_del.set(values[-1] if len(values) != 0 else "NoRegistered")
 
     def start_sending(self):
         """ Method to start sending the file """
