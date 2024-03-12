@@ -57,6 +57,7 @@ class App(customtkinter.CTk):
 
         self.title("File Sender app")
         self.geometry(f"{450}x{290}")
+        self.resizable(False, False)
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -149,7 +150,10 @@ class App(customtkinter.CTk):
         label_multiple_receive.pack()
         button_receive_multiple = customtkinter.CTkButton(tabview.tab("+"), text="Receive Files",
                                                           command=lambda: start_thread(self.receive_multiple_files))
-        button_receive_multiple.pack(pady=5)
+        button_receive_multiple.pack(pady=(5, 10))
+        button_stop_multiple = customtkinter.CTkButton(tabview.tab("+"), text="Stop Running",
+                                                       command=lambda: exit_event.set())
+        button_stop_multiple.pack(pady=10)
 
         super().mainloop()
 
