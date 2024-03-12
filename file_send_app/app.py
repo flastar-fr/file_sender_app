@@ -237,11 +237,11 @@ class App(customtkinter.CTk):
             CTkMessagebox(self, title="Error", message="Connection refused", icon="cancel")
             return None
 
-        file_size = sum([os.path.getsize(file) for file in files])
+        files_size = sum([os.path.getsize(file) for file in files])
         total_bytes = 0
 
-        s.send(f"{file_size}".encode())
-        s.send(f"{len(files)}".encode())
+        s.send(str(files_size).encode() + b'|')
+        s.send(str(len(files)).encode() + b'|')
 
         for file in files:
             # initialized sending
@@ -249,7 +249,11 @@ class App(customtkinter.CTk):
 
             s.send(file_name.encode())
 
-            # sending
+        # send a delimiter to indicate the end of file names
+        s.send(b"END_OF_FILE_NAMES")
+
+        # sending
+        for file in files:
             with open(file, "rb") as f:
                 while True:
                     bytes_read = f.read(BUFFER_SIZE)
@@ -259,7 +263,7 @@ class App(customtkinter.CTk):
                         break
                     s.send(bytes_read)
                     total_bytes += len(bytes_read)
-                    self._progress_bar_multiple.set(math.ceil(total_bytes / file_size))
+                    self._progress_bar_multiple.set(math.ceil(total_bytes / files_size))
 
                 if exit_event.is_set():
                     break
@@ -292,20 +296,36 @@ class App(customtkinter.CTk):
 
         # size
         total_bytes = 0
-        file_size = client_socket.recv(BUFFER_SIZE).decode()
-        print(f"{file_size} file size")
-        total_files = client_socket.recv(BUFFER_SIZE).decode()
-        print(f"{total_files} total files")
+        file_size_bytes = ''.encode()
+        while True:
+            chunk = client_socket.recv(1)
+            if chunk == '|'.encode():
+                break
+            file_size_bytes += chunk
+        file_size = int(file_size_bytes)
+
+        total_file_bytes = ''.encode()
+        while True:
+            chunk = client_socket.recv(1)
+            if chunk == '|'.encode():
+                break
+            total_file_bytes += chunk
+        total_files = int(total_file_bytes)
 
         downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
 
         # receiving
-        for _ in range(int(total_files)):
-            # get final path
+        file_names = []
+        while True:
             filename = client_socket.recv(BUFFER_SIZE).decode()
-            print(f"{filename} file name")
-            filepath = os.path.join(downloads_folder, filename)
-            print(filepath)
+            if filename == "END_OF_FILE_NAMES":
+                break
+            file_names.append(filename)
+
+        for i in range(int(total_files)):
+            # get final path
+            # filename = client_socket.recv(BUFFER_SIZE)
+            filepath = os.path.join(downloads_folder, file_names[i])
 
             with open(filepath, 'wb') as f:
                 while True:
@@ -325,9 +345,9 @@ class App(customtkinter.CTk):
             CTkMessagebox(self, title="Cancel", message="Receiving successfully canceled", icon="check")
             exit_event.clear()
         else:
+            CTkMessagebox(self, title="Complete", message="Receiving complete", icon="check")
             client_socket.close()
             s.close()
-            CTkMessagebox(self, title="Complete", message="Receiving complete", icon="check")
 
     def start_sending(self):
         """ Method to start sending the file """

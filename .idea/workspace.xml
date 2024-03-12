@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="First multiple files added">
+    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="Update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/file_send_app/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_send_app/app.py" afterDir="false" />
     </list>
@@ -53,6 +53,7 @@
       <recent name="C:\Users\hugob\Desktop\fourre tout\file_send_app" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\hugob\Desktop\fourre tout\file_send_app\file_send_app" />
       <recent name="C:\Users\hugob\Desktop\fourre tout\file_send_app" />
     </key>
   </component>
@@ -242,7 +243,15 @@
       <option name="project" value="LOCAL" />
       <updated>1710278422990</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Update">
+      <option name="closed" value="true" />
+      <created>1710281738909</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1710281738909</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -255,6 +264,7 @@
     <MESSAGE value="Progress bar and Front end clean up" />
     <MESSAGE value="Fix" />
     <MESSAGE value="First multiple files added" />
-    <option name="LAST_COMMIT_MESSAGE" value="First multiple files added" />
+    <MESSAGE value="Update" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update" />
   </component>
 </project>
