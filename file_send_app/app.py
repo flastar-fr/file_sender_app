@@ -4,10 +4,9 @@ import socket
 import re
 import customtkinter
 import threading
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, askopenfilenames
 from CTkMessagebox import CTkMessagebox
 from datas_extraction import read_json_file, get_self_ip, write_json_file
-
 
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
@@ -54,7 +53,7 @@ class App(customtkinter.CTk):
         self.datas: dict[str: dict[str: str]] = read_json_file("datas.json")
 
         ips = self.datas["ip"]
-        ips = {name: ip for name, ip in ips.items() if ip != get_self_ip()}
+        # ips = {name: ip for name, ip in ips.items() if ip != get_self_ip()}
 
         self.title("File Sender app")
         self.geometry(f"{450}x{290}")
@@ -66,6 +65,7 @@ class App(customtkinter.CTk):
         tabview.add("Send")
         tabview.add("Receive")
         tabview.add("Add/Delete PC")
+        tabview.add("+")
         tabview.pack(expand=True, fill="both", padx=10, pady=(0, 10))
 
         # send tab
@@ -108,7 +108,7 @@ class App(customtkinter.CTk):
         button_stop_receive.pack(pady=20, anchor="center")
 
         # add and delete PC tab
-        label_add = customtkinter.CTkLabel(tabview.tab("Add/Delete PC"), text="Add :")
+        label_add = customtkinter.CTkLabel(tabview.tab("Add/Delete PC"), text="Add")
         label_add.pack()
         frame_add = customtkinter.CTkFrame(tabview.tab("Add/Delete PC"))
         frame_add.pack()
@@ -117,7 +117,7 @@ class App(customtkinter.CTk):
         button_add_new = customtkinter.CTkButton(frame_add, text="Add other PC", command=lambda: self.add_new_pc())
         button_add_new.pack(pady=10)
 
-        label_delete = customtkinter.CTkLabel(tabview.tab("Add/Delete PC"), text="Delete :")
+        label_delete = customtkinter.CTkLabel(tabview.tab("Add/Delete PC"), text="Delete")
         label_delete.pack()
         frame_delete = customtkinter.CTkFrame(tabview.tab("Add/Delete PC"))
         frame_delete.pack()
@@ -125,6 +125,27 @@ class App(customtkinter.CTk):
         self._option_ip_del.grid(row=0, column=0, padx=(0, 10))
         button_del = customtkinter.CTkButton(frame_delete, text="Delete", command=lambda: self.delete_pc())
         button_del.grid(row=0, column=1)
+
+        # + tab
+        label_multiple_send = customtkinter.CTkLabel(tabview.tab("+"), text="Send Multiple Files")
+        label_multiple_send.pack(pady=10)
+        # multiple send
+        frame_multiple_send = customtkinter.CTkFrame(tabview.tab("+"))
+        frame_multiple_send.pack()
+        vals = [key for key in ips.keys()]
+        self._option_ip_m = customtkinter.CTkOptionMenu(frame_multiple_send,
+                                                        values=vals if len(vals) != 0 else ["NoRegistered"])
+        self._option_ip_m.grid(row=0, column=0, padx=20, pady=5)
+        button_send_multiple = customtkinter.CTkButton(frame_multiple_send, text="Send files",
+                                                       command=lambda: start_thread(self.send_multiple_files))
+        button_send_multiple.grid(row=0, column=1)
+
+        # multiple receive
+        label_multiple_receive = customtkinter.CTkLabel(tabview.tab("+"), text="Receive Multiple Files")
+        label_multiple_receive.pack()
+        button_receive_multiple = customtkinter.CTkButton(tabview.tab("+"), text="Receive Files",
+                                                          command=lambda: start_thread(self.receive_multiple_files))
+        button_receive_multiple.pack(pady=5)
 
         super().mainloop()
 
@@ -192,9 +213,118 @@ class App(customtkinter.CTk):
         self._option_ip_del.configure(values=values)
         self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
         self._option_ip_del.set(values[-1] if len(values) != 0 else "NoRegistered")
+        self._option_ip_m.set(values[-1] if len(values) != 0 else "NoRegistered")
+
+    def send_multiple_files(self):
+        """ Method to send multiple files """
+        self._progress_bar_send.set(0)
+
+        files = askopenfilenames()
+        if files == "":
+            return None
+
+        host: str = self.datas["ip"][self._option_ip_m.get()]
+        s = socket.socket()
+
+        # inputs verification
+        assert re.search(r'^\d+.\d+.\d+.\d+$', host), "IP adress does not match"
+
+        if not try_to_connect(s, host, 4711):
+            CTkMessagebox(self, title="Error", message="Connection refused", icon="cancel")
+            return None
+
+        file_size = sum([os.path.getsize(file) for file in files])
+        total_bytes = 0
+
+        s.send(str(file_size).encode())
+        s.send(str(len(files)).encode())
+
+        for file in files:
+            # initialized sending
+            file_name = os.path.basename(file)
+
+            s.send(file_name.encode())
+
+            # sending
+            with open(file, "rb") as f:
+                while True:
+                    bytes_read = f.read(BUFFER_SIZE)
+                    if not bytes_read:  # if file is fully readen
+                        break
+                    if exit_event.is_set():  # if user wants to cancel
+                        break
+                    s.send(bytes_read)
+                    total_bytes += len(bytes_read)
+                    self._progress_bar_send.set(math.ceil(total_bytes / file_size))
+
+                if exit_event.is_set():
+                    break
+
+        if exit_event.is_set():
+            exit_event.clear()
+            CTkMessagebox(self, title="Cancel", message="Sending successfully canceled", icon="check")
+        else:
+            s.close()
+            CTkMessagebox(self, title="Complete", message="Sending complete", icon="check")
+
+    def receive_multiple_files(self):
+        """ Method to receive multiple files """
+        self._progress_bar_receive.set(0)
+
+        # socket initialization
+        adresse = ""
+        port = 4711
+        s = socket.socket()
+        s.bind((adresse, port))
+
+        s.listen(1)
+
+        client_socket, client_address = s.accept()
+
+        # verify if the adress is in selectable adresses
+        if client_address[0] not in self.datas["ip"].values():
+            CTkMessagebox(self, title="Error", message="Connection refused, IP not registered", icon="cancel")
+            return None
+
+        # size
+        total_bytes = 0
+        file_size = int(client_socket.recv(BUFFER_SIZE).decode())
+        total_files = int(client_socket.recv(BUFFER_SIZE).decode())
+
+        downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+
+        # receiving
+        for _ in range(total_files):
+            # get final path
+            filename = client_socket.recv(BUFFER_SIZE).decode()
+            filepath = os.path.join(downloads_folder, filename)
+
+            with open(filepath, 'wb') as f:
+                while True:
+                    datas = client_socket.recv(BUFFER_SIZE)
+                    if not datas:  # if file is fully readen
+                        break
+                    if exit_event.is_set():  # if user wants to cancel
+                        break
+                    f.write(datas)
+                    total_bytes += len(datas)
+                    self._progress_bar_send.set(math.ceil(total_bytes / file_size))
+
+                if exit_event.is_set():
+                    break
+
+        if exit_event.is_set():
+            CTkMessagebox(self, title="Cancel", message="Receiving successfully canceled", icon="check")
+            exit_event.clear()
+        else:
+            client_socket.close()
+            s.close()
+            CTkMessagebox(self, title="Complete", message="Receiving complete", icon="check")
 
     def start_sending(self):
         """ Method to start sending the file """
+        self._progress_bar_send.set(0)
+
         # inputs selection
         host: str = self.datas["ip"][self._option_ip.get()]
         file_path: str = self._entry_file.get()
@@ -222,11 +352,11 @@ class App(customtkinter.CTk):
         # sending
         with open(file_path, "rb") as f:
             while True:
-                try:    # case receiving is canceled on other computer
+                try:  # case receiving is canceled on other computer
                     bytes_read = f.read(BUFFER_SIZE)
                 except ConnectionResetError:
                     CTkMessagebox(self, title="Cancel", message="Receiving canceled", icon="cancel")
-                if not bytes_read:      # if file is fully readen
+                if not bytes_read:  # if file is fully readen
                     s.close()
                     CTkMessagebox(self, title="Complete", message="Sending complete", icon="check")
                     break
@@ -240,6 +370,8 @@ class App(customtkinter.CTk):
 
     def start_receiving(self):
         """ Method to start receiving the file """
+        self._progress_bar_receive.set(0)
+
         # socket initialization
         adresse = ""
         port = 4711
@@ -268,18 +400,18 @@ class App(customtkinter.CTk):
         with open(filepath, 'wb') as f:
             while True:
                 datas = client_socket.recv(BUFFER_SIZE)
-                if not datas:    # if file is fully readen
+                if not datas:  # if file is fully readen
                     client_socket.close()
                     s.close()
                     CTkMessagebox(self, title="Complete", message="Receiving complete", icon="check")
                     break
-                if exit_event.is_set():     # if user wants to cancel
+                if exit_event.is_set():  # if user wants to cancel
                     CTkMessagebox(self, title="Cancel", message="Receiving successfully canceled", icon="check")
                     exit_event.clear()
                     break
                 f.write(datas)
                 total_bytes += len(datas)
-                self._progress_bar_send.set(math.ceil(total_bytes / file_size))
+                self._progress_bar_receive.set(math.ceil(total_bytes / file_size))
 
 
 if __name__ == "__main__":
