@@ -1,8 +1,10 @@
 # App to send a file from a computer to another computer
 
-To work this program needs a file ``datas.json`` located in ``/file_send/app/`` directory.
+To work this program needs a file ``datas.json`` located in ``/file_send_app/`` directory.
 
-For obvious reasons the file ``datas.json`` is not shared in this project but it looks like :
+This file is automatically created if it doesn't exist. If for any reason it didn't, you can follow and create yourself 
+with this structure
+
 ```
 {
   "ip": {"PC 1": "IP1", 

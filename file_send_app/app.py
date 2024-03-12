@@ -8,6 +8,7 @@ from tkinter.filedialog import askopenfilename
 from CTkMessagebox import CTkMessagebox
 from datas_extraction import read_json_file, get_self_ip, write_json_file
 
+
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
 BUFFER_SIZE = 4096
@@ -48,6 +49,8 @@ class App(customtkinter.CTk):
         dname = os.path.dirname(abspath)
         os.chdir(dname)
 
+        self.check_json_file()
+
         self.datas: dict[str: dict[str: str]] = read_json_file("datas.json")
 
         ips = self.datas["ip"]
@@ -70,8 +73,8 @@ class App(customtkinter.CTk):
         frame_send.pack()
         label_ip = customtkinter.CTkLabel(frame_send, text="Select PC : ")
         label_ip.grid(row=0, column=0)
-        values = [key for key in ips.keys()]
-        self._option_ip = customtkinter.CTkOptionMenu(frame_send, values=values)
+        vals = [key for key in ips.keys()]
+        self._option_ip = customtkinter.CTkOptionMenu(frame_send, values=vals if len(vals) != 0 else ["NoRegistered"])
         self._option_ip.grid(row=0, column=1, padx=20, pady=5)
         label_file = customtkinter.CTkLabel(frame_send, text="File Path : ")
         label_file.grid(row=2, column=0)
@@ -125,6 +128,12 @@ class App(customtkinter.CTk):
 
         super().mainloop()
 
+    def check_json_file(self):
+        """ Method to check if the datas.json file exists otherwise creates it """
+        if not os.path.exists("datas.json"):
+            write_json_file({"ip": {}})
+            CTkMessagebox(self, title="File added", message="datas.json file successfully added", icon="check")
+
     def select_folder(self):
         """ Method to select the folder path and change the needed entry """
         folder_path = askopenfilename(title="Select file")
@@ -143,28 +152,42 @@ class App(customtkinter.CTk):
         self.datas["ip"][pc_name.get_input()] = current_ip
         write_json_file(self.datas)
 
-        self._option_ip_del.configure(values=[key for key in self.datas["ip"].keys()])
-        self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
+        self._refresh_options_values()
 
     def add_new_pc(self):
         """ Method to add a new computer """
+        # name
         pc_name = customtkinter.CTkInputDialog(title="Enter", text="Please, enter a name for your computer")
-        pc_ip = customtkinter.CTkInputDialog(title="Enter", text="Please, enter the IP you want to add")
-
-        if pc_ip.get_input() in self.datas["ip"].values():
+        pc_name_val = pc_name.get_input()
+        if pc_name_val is None:
+            CTkMessagebox(self, title="Error", message="Invalid name", icon="cancel")
             return None
 
-        self.datas["ip"][pc_name.get_input()] = pc_ip.get_input()
+        # ip
+        pc_ip = customtkinter.CTkInputDialog(title="Enter", text="Please, enter the IP you want to add")
+        pc_ip_val = pc_ip.get_input()
+        if pc_ip_val is None:
+            CTkMessagebox(self, title="Error", message="Invalid name", icon="cancel")
+            return None
+        if not re.search(r'^\d+.\d+.\d+.\d+$', pc_ip_val):
+            CTkMessagebox(self, title="Error", message="IP doesn't follow the IPv4 format", icon="cancel")
+            return None
+
+        self.datas["ip"][pc_name_val] = pc_ip_val
         write_json_file(self.datas)
 
-        self._option_ip_del.configure(values=[key for key in self.datas["ip"].keys()])
-        self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
+        self._refresh_options_values()
 
     def delete_pc(self):
+        """ Method to delete a PC from the datas.json file """
         to_delete = self._option_ip_del.get()
         self.datas["ip"].pop(to_delete)
         write_json_file(self.datas)
 
+        self._refresh_options_values()
+
+    def _refresh_options_values(self):
+        """ Method to update with the new datas the option menus """
         values = [key for key in self.datas["ip"].keys()]
         self._option_ip_del.configure(values=values)
         self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
@@ -181,11 +204,11 @@ class App(customtkinter.CTk):
         assert re.search(r'^\d+.\d+.\d+.\d+$', host), "IP adress does not match"
 
         if not os.path.exists(file_path):
-            CTkMessagebox(title="Error", message="File does not exist", icon="cancel")
+            CTkMessagebox(self, title="Error", message="File does not exist", icon="cancel")
             return None
 
         if not try_to_connect(s, host, 4711):
-            CTkMessagebox(title="Error", message="Connection refused", icon="cancel")
+            CTkMessagebox(self, title="Error", message="Connection refused", icon="cancel")
             return None
 
         # initialized sending
@@ -202,13 +225,13 @@ class App(customtkinter.CTk):
                 try:    # case receiving is canceled on other computer
                     bytes_read = f.read(BUFFER_SIZE)
                 except ConnectionResetError:
-                    CTkMessagebox(title="Cancel", message="Receiving canceled", icon="cancel")
+                    CTkMessagebox(self, title="Cancel", message="Receiving canceled", icon="cancel")
                 if not bytes_read:      # if file is fully readen
                     s.close()
-                    CTkMessagebox(title="Complete", message="Sending complete", icon="check")
+                    CTkMessagebox(self, title="Complete", message="Sending complete", icon="check")
                     break
                 if exit_event.is_set():  # if user wants to cancel
-                    CTkMessagebox(title="Cancel", message="Sending successfully canceled", icon="check")
+                    CTkMessagebox(self, title="Cancel", message="Sending successfully canceled", icon="check")
                     exit_event.clear()
                     break
                 s.send(bytes_read)
@@ -229,7 +252,7 @@ class App(customtkinter.CTk):
 
         # verify if the adress is in selectable adresses
         if client_address[0] not in self.datas["ip"].values():
-            CTkMessagebox(title="Error", message="Connection refused, IP not registered", icon="cancel")
+            CTkMessagebox(self, title="Error", message="Connection refused, IP not registered", icon="cancel")
             return None
 
         # get final path
@@ -248,10 +271,10 @@ class App(customtkinter.CTk):
                 if not datas:    # if file is fully readen
                     client_socket.close()
                     s.close()
-                    CTkMessagebox(title="Complete", message="Receiving complete", icon="check")
+                    CTkMessagebox(self, title="Complete", message="Receiving complete", icon="check")
                     break
                 if exit_event.is_set():     # if user wants to cancel
-                    CTkMessagebox(title="Cancel", message="Receiving successfully canceled", icon="check")
+                    CTkMessagebox(self, title="Cancel", message="Receiving successfully canceled", icon="check")
                     exit_event.clear()
                     break
                 f.write(datas)
