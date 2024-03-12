@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="Fix">
+    <list default="true" id="ce9cfc98-0431-46a2-bc39-297b8a18a5df" name="Changes" comment="First multiple files added">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/file_send_app/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_send_app/app.py" afterDir="false" />
     </list>
@@ -234,7 +234,15 @@
       <option name="project" value="LOCAL" />
       <updated>1710269051455</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="First multiple files added">
+      <option name="closed" value="true" />
+      <created>1710278422990</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1710278422990</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -246,6 +254,7 @@
     <MESSAGE value="Folder button fix" />
     <MESSAGE value="Progress bar and Front end clean up" />
     <MESSAGE value="Fix" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix" />
+    <MESSAGE value="First multiple files added" />
+    <option name="LAST_COMMIT_MESSAGE" value="First multiple files added" />
   </component>
 </project>

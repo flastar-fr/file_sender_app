@@ -127,6 +127,10 @@ class App(customtkinter.CTk):
         button_del.grid(row=0, column=1)
 
         # + tab
+        self._progress_bar_multiple = customtkinter.CTkProgressBar(tabview.tab("+"), mode="determinate")
+        self._progress_bar_multiple.set(0)
+        self._progress_bar_multiple.configure(progress_color="#158f24")
+        self._progress_bar_multiple.pack()
         label_multiple_send = customtkinter.CTkLabel(tabview.tab("+"), text="Send Multiple Files")
         label_multiple_send.pack(pady=10)
         # multiple send
@@ -217,7 +221,7 @@ class App(customtkinter.CTk):
 
     def send_multiple_files(self):
         """ Method to send multiple files """
-        self._progress_bar_send.set(0)
+        self._progress_bar_multiple.set(0)
 
         files = askopenfilenames()
         if files == "":
@@ -236,8 +240,8 @@ class App(customtkinter.CTk):
         file_size = sum([os.path.getsize(file) for file in files])
         total_bytes = 0
 
-        s.send(str(file_size).encode())
-        s.send(str(len(files)).encode())
+        s.send(f"{file_size}".encode())
+        s.send(f"{len(files)}".encode())
 
         for file in files:
             # initialized sending
@@ -255,7 +259,7 @@ class App(customtkinter.CTk):
                         break
                     s.send(bytes_read)
                     total_bytes += len(bytes_read)
-                    self._progress_bar_send.set(math.ceil(total_bytes / file_size))
+                    self._progress_bar_multiple.set(math.ceil(total_bytes / file_size))
 
                 if exit_event.is_set():
                     break
@@ -269,7 +273,7 @@ class App(customtkinter.CTk):
 
     def receive_multiple_files(self):
         """ Method to receive multiple files """
-        self._progress_bar_receive.set(0)
+        self._progress_bar_multiple.set(0)
 
         # socket initialization
         adresse = ""
@@ -288,16 +292,20 @@ class App(customtkinter.CTk):
 
         # size
         total_bytes = 0
-        file_size = int(client_socket.recv(BUFFER_SIZE).decode())
-        total_files = int(client_socket.recv(BUFFER_SIZE).decode())
+        file_size = client_socket.recv(BUFFER_SIZE).decode()
+        print(f"{file_size} file size")
+        total_files = client_socket.recv(BUFFER_SIZE).decode()
+        print(f"{total_files} total files")
 
         downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
 
         # receiving
-        for _ in range(total_files):
+        for _ in range(int(total_files)):
             # get final path
             filename = client_socket.recv(BUFFER_SIZE).decode()
+            print(f"{filename} file name")
             filepath = os.path.join(downloads_folder, filename)
+            print(filepath)
 
             with open(filepath, 'wb') as f:
                 while True:
@@ -308,7 +316,7 @@ class App(customtkinter.CTk):
                         break
                     f.write(datas)
                     total_bytes += len(datas)
-                    self._progress_bar_send.set(math.ceil(total_bytes / file_size))
+                    self._progress_bar_multiple.set(math.ceil(total_bytes / int(file_size)))
 
                 if exit_event.is_set():
                     break
