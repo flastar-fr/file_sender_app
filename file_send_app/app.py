@@ -20,6 +20,7 @@ def start_thread(to_execute: ..., *args: ...):
         :param args: Any -> arguments to pass
     """
     thread = threading.Thread(target=to_execute, args=args)
+    thread.daemon = True
     thread.start()
 
 
