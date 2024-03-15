@@ -9,6 +9,7 @@ from tkinter.filedialog import askopenfilename, askopenfilenames
 from CTkMessagebox import CTkMessagebox
 from datas_extraction import read_json_file, get_self_ip, write_json_file
 
+
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
 BUFFER_SIZE = 4096
