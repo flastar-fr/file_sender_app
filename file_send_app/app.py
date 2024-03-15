@@ -4,6 +4,7 @@ import socket
 import re
 import customtkinter
 import threading
+from uuid import getnode
 from tkinter.filedialog import askopenfilename, askopenfilenames
 from CTkMessagebox import CTkMessagebox
 from datas_extraction import read_json_file, get_self_ip, write_json_file
@@ -53,9 +54,6 @@ class App(customtkinter.CTk):
 
         self.datas: dict[str: dict[str: str]] = read_json_file("datas.json")
 
-        ips = self.datas["ip"]
-        # ips = {name: ip for name, ip in ips.items() if ip != get_self_ip()}
-
         self.title("File Sender app")
         self.geometry(f"{450}x{290}")
         self.resizable(False, False)
@@ -75,7 +73,7 @@ class App(customtkinter.CTk):
         frame_send.pack()
         label_ip = customtkinter.CTkLabel(frame_send, text="Select PC : ")
         label_ip.grid(row=0, column=0)
-        vals = [key for key in ips.keys()]
+        vals = list(self.datas["look"].keys())
         self._option_ip = customtkinter.CTkOptionMenu(frame_send, values=vals if len(vals) != 0 else ["NoRegistered"])
         self._option_ip.grid(row=0, column=1, padx=20, pady=5)
         label_file = customtkinter.CTkLabel(frame_send, text="File Path : ")
@@ -103,7 +101,7 @@ class App(customtkinter.CTk):
         button_start_receive.pack(pady=20, anchor="n")
         self._progress_bar_receive = customtkinter.CTkProgressBar(tabview.tab("Receive"), mode="determinate")
         self._progress_bar_receive.set(0)
-        self._progress_bar_receive.configure(progress_color="#158f24")
+        self._progress_bar_receive.configure(progress_color="#1ba62b")
         self._progress_bar_receive.pack()
         button_stop_receive = customtkinter.CTkButton(tabview.tab("Receive"), text="Stop receiving",
                                                       command=lambda: exit_event.set())
@@ -123,7 +121,8 @@ class App(customtkinter.CTk):
         label_delete.pack()
         frame_delete = customtkinter.CTkFrame(tabview.tab("Add/Delete PC"))
         frame_delete.pack()
-        self._option_ip_del = customtkinter.CTkOptionMenu(frame_delete, values=[key for key in self.datas["ip"].keys()])
+        self._option_ip_del = customtkinter.CTkOptionMenu(frame_delete,
+                                                          values=vals if len(vals) != 0 else ["NoRegistered"])
         self._option_ip_del.grid(row=0, column=0, padx=(0, 10))
         button_del = customtkinter.CTkButton(frame_delete, text="Delete", command=lambda: self.delete_pc())
         button_del.grid(row=0, column=1)
@@ -131,14 +130,14 @@ class App(customtkinter.CTk):
         # + tab
         self._progress_bar_multiple = customtkinter.CTkProgressBar(tabview.tab("+"), mode="determinate")
         self._progress_bar_multiple.set(0)
-        self._progress_bar_multiple.configure(progress_color="#158f24")
+        self._progress_bar_multiple.configure(progress_color="#1ba62b")
         self._progress_bar_multiple.pack()
         label_multiple_send = customtkinter.CTkLabel(tabview.tab("+"), text="Send Multiple Files")
         label_multiple_send.pack(pady=10)
         # multiple send
         frame_multiple_send = customtkinter.CTkFrame(tabview.tab("+"))
         frame_multiple_send.pack()
-        vals = [key for key in ips.keys()]
+        vals = list(self.datas["look"].keys())
         self._option_ip_m = customtkinter.CTkOptionMenu(frame_multiple_send,
                                                         values=vals if len(vals) != 0 else ["NoRegistered"])
         self._option_ip_m.grid(row=0, column=0, padx=20, pady=5)
@@ -161,7 +160,7 @@ class App(customtkinter.CTk):
     def check_json_file(self):
         """ Method to check if the datas.json file exists otherwise creates it """
         if not os.path.exists("datas.json"):
-            write_json_file({"ip": {}})
+            write_json_file({"ip": {}, "look": {}})
             CTkMessagebox(self, title="File added", message="datas.json file successfully added", icon="check")
 
     def select_folder(self):
@@ -172,14 +171,19 @@ class App(customtkinter.CTk):
 
     def add_current_pc(self):
         """ Method to add the current selected computer """
+        mac_adress = str(getnode())
         current_ip = get_self_ip()
-
-        if current_ip in self.datas["ip"].values():
+        if mac_adress in self.datas["ip"].keys():
+            self.datas["ip"][mac_adress] = current_ip
+            write_json_file(self.datas)
             return None
+
+        current_ip = get_self_ip()
 
         pc_name = customtkinter.CTkInputDialog(title="Enter", text="Please, enter a name for your computer")
 
-        self.datas["ip"][pc_name.get_input()] = current_ip
+        self.datas["ip"][mac_adress] = current_ip
+        self.datas["look"][pc_name.get_input()] = mac_adress
         write_json_file(self.datas)
 
         self._refresh_options_values()
@@ -203,7 +207,9 @@ class App(customtkinter.CTk):
             CTkMessagebox(self, title="Error", message="IP doesn't follow the IPv4 format", icon="cancel")
             return None
 
-        self.datas["ip"][pc_name_val] = pc_ip_val
+        mac_adress = getnode()
+        self.datas["ip"][mac_adress] = pc_ip_val
+        self.datas["look"][pc_name_val] = mac_adress
         write_json_file(self.datas)
 
         self._refresh_options_values()
@@ -211,16 +217,18 @@ class App(customtkinter.CTk):
     def delete_pc(self):
         """ Method to delete a PC from the datas.json file """
         to_delete = self._option_ip_del.get()
-        self.datas["ip"].pop(to_delete)
+        mac_adress = str(self.datas["look"][to_delete])
+        self.datas["look"].pop(to_delete)
+        self.datas["ip"].pop(mac_adress)
         write_json_file(self.datas)
 
         self._refresh_options_values()
 
     def _refresh_options_values(self):
         """ Method to update with the new datas the option menus """
-        values = [key for key in self.datas["ip"].keys()]
+        values = list(self.datas["look"].keys())
         self._option_ip_del.configure(values=values)
-        self._option_ip.configure(values=[key for key, val in self.datas["ip"].items() if val != get_self_ip()])
+        self._option_ip.configure(values=list(self.datas["look"].keys()))
         self._option_ip_del.set(values[-1] if len(values) != 0 else "NoRegistered")
         self._option_ip_m.set(values[-1] if len(values) != 0 else "NoRegistered")
 
@@ -232,7 +240,8 @@ class App(customtkinter.CTk):
         if files == "":
             return None
 
-        host: str = self.datas["ip"][self._option_ip_m.get()]
+        val_string = self._option_ip_m.get()
+        host: str = self.datas["ip"][self.datas["look"][val_string]]
         s = socket.socket()
 
         # inputs verification
@@ -268,7 +277,7 @@ class App(customtkinter.CTk):
                         break
                     s.send(bytes_read)
                     total_bytes += len(bytes_read)
-                    self._progress_bar_multiple.set(math.ceil(total_bytes / files_size))
+                    self._progress_bar_multiple.set(math.ceil(total_bytes / files_size * 100)/100)
 
                 if exit_event.is_set():
                     break
@@ -341,7 +350,7 @@ class App(customtkinter.CTk):
                         break
                     f.write(datas)
                     total_bytes += len(datas)
-                    self._progress_bar_multiple.set(math.ceil(total_bytes / int(file_size)))
+                    self._progress_bar_multiple.set(math.ceil(total_bytes / int(file_size) * 100)/100)
 
                 if exit_event.is_set():
                     break
@@ -359,7 +368,9 @@ class App(customtkinter.CTk):
         self._progress_bar_send.set(0)
 
         # inputs selection
-        host: str = self.datas["ip"][self._option_ip.get()]
+        val_string = self._option_ip_m.get()
+        mac_adress = str(self.datas["look"][val_string])
+        host: str = self.datas["ip"][mac_adress]
         file_path: str = self._entry_file.get()
         s = socket.socket()
 
@@ -399,7 +410,7 @@ class App(customtkinter.CTk):
                     break
                 s.send(bytes_read)
                 total_bytes += len(bytes_read)
-                self._progress_bar_send.set(math.ceil(total_bytes / file_size))
+                self._progress_bar_send.set(math.ceil(total_bytes / file_size * 100)/100)
 
     def start_receiving(self):
         """ Method to start receiving the file """
@@ -444,7 +455,7 @@ class App(customtkinter.CTk):
                     break
                 f.write(datas)
                 total_bytes += len(datas)
-                self._progress_bar_receive.set(math.ceil(total_bytes / file_size))
+                self._progress_bar_receive.set(math.ceil(total_bytes / file_size * 100)/100)
 
 
 if __name__ == "__main__":
